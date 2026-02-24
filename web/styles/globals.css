@@ -1,0 +1,27 @@
+:root {
+  --bg: #f8fbff;
+  --text: #112034;
+  --card: #ffffff;
+}
+
+body {
+  background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
+  color: var(--text);
+}
+
+.card {
+  border: 1px solid #dce7ff;
+  border-radius: 14px;
+}
+
+.theme-dark {
+  --bg: #0f172a;
+  --text: #dbeafe;
+  --card: #1e293b;
+  color: var(--text);
+}
+
+.theme-dark .card {
+  background: var(--card);
+  border-color: #334155;
+}
