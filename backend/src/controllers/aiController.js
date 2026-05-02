@@ -11,4 +11,9 @@ const generateFlashcards = asyncHandler(async (req, res) => {
   return res.status(201).json({ count: docs.length, data: docs });
 });
 
-module.exports = { generateStudyPlan, generateFlashcards };
+const generateQuiz = asyncHandler(async (req, res) => {
+  const doc = await aiService.generateQuiz(req.user.id, req.body);
+  return res.status(201).json(doc);
+});
+
+module.exports = { generateStudyPlan, generateFlashcards, generateQuiz };

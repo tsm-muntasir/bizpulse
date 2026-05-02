@@ -108,4 +108,48 @@ async function generateFlashcards(userId, payload) {
   return flashcardRepo.insertMany(docs);
 }
 
-module.exports = { generateStudyPlan, generateFlashcards };
+function fallbackQuiz(subjectId, count = 5) {
+  return Array.from({ length: count }, (_, i) => ({
+    question: `Sample question ${i + 1}?`,
+    options: [
+      { text: 'Option A', isCorrect: false },
+      { text: 'Option B', isCorrect: true },
+      { text: 'Option C', isCorrect: false },
+      { text: 'Option D', isCorrect: false }
+    ],
+    explanation: 'This is a fallback explanation.',
+    difficulty: 'medium',
+    tags: ['fallback']
+  }));
+}
+
+async function generateQuiz(userId, payload) {
+  await subscriptionService.consumeAiQuota(userId);
+
+  const prompt = `Generate ${payload.count} quiz questions for subject ${payload.subjectId}. Topic: ${payload.topic}. Difficulty: ${payload.difficulty || 'medium'}. Include explanations.`;
+  const schemaHint = '{"questions":[{"question":"string","options":[{"text":"string","isCorrect":boolean}],"explanation":"string","difficulty":"easy|medium|hard","tags":["string"]}]}';
+
+  let aiOutput;
+  try {
+    aiOutput = await callAiStructured(prompt, schemaHint);
+  } catch (_err) {
+    aiOutput = { questions: fallbackQuiz(payload.subjectId, payload.count) };
+  }
+
+  const quizRepo = require('../repositories/quizRepository');
+  const doc = await quizRepo.create({
+    userId,
+    subjectId: payload.subjectId,
+    title: payload.title || `Quiz on ${payload.topic}`,
+    description: payload.description || `Generated quiz covering ${payload.topic}`,
+    questions: aiOutput.questions,
+    source: 'ai',
+    aiModel: 'gpt-4o-mini',
+    timeLimitMinutes: payload.timeLimitMinutes || 30,
+    passingScore: payload.passingScore || 70
+  });
+
+  return doc;
+}
+
+module.exports = { generateStudyPlan, generateFlashcards, generateQuiz };
